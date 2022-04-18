@@ -4,6 +4,10 @@ plugins {
     id 'maven-publish'
 }
 
+kotlin {
+    explicitApi()
+}
+
 android {
     compileSdk 32
 
@@ -41,9 +45,11 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.1'
     implementation "androidx.compose.ui:ui:1.1.1"
     implementation 'androidx.compose.animation:animation:1.1.1'
+    implementation 'androidx.compose.animation:animation-graphics:1.1.1'
     implementation 'androidx.compose.foundation:foundation:1.1.1'
     implementation 'androidx.compose.material:material:1.1.1'
     implementation "androidx.media3:media3-exoplayer:1.0.0-alpha03"
+
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

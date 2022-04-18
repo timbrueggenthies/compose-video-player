@@ -2,12 +2,10 @@ package de.brueggenthies.compose.video.ui
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,46 +14,40 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import de.brueggenthies.compose.video.state.MutableVideoPlayerState
+import de.brueggenthies.compose.video.state.PlaybackState
 import de.brueggenthies.compose.video.ui.components.AnimatedSeekbar
 import de.brueggenthies.compose.video.ui.core.VideoControlsContainer
-import kotlinx.coroutines.delay
 
 @Composable
 fun DefaultVideoControls(
     playbackState: MutableVideoPlayerState,
     modifier: Modifier = Modifier,
-    background: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit = {
-        defaultBackground(it)
-    },
-    playPauseButton: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit = {
-        defaultPlayPauseButton(it)
-    },
-    seekbar: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit = {
-        defaultSeekBar(this, it)
-    },
+    editor: VideoControlsEditorScope.() -> Unit = { },
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    var controlsVisible by remember { mutableStateOf(false) }
+    val editorScope = remember { VideoControlsEditorScope(defaultSeekBar, defaultPlayPauseButton, defaultBackground, defaultLoadingIndicator) }
+    editorScope.editor()
     VideoControlsContainer(
         playbackState = playbackState,
-        modifier = modifier
-            .fillMaxSize()
-            .clickable(interactionSource, null) { controlsVisible = !controlsVisible }
-    ) {
-        background(playbackState)
-        Box(modifier = Modifier.align(Alignment.Center)) {
-            playPauseButton(this@VideoControls, playbackState)
+        modifier = modifier,
+        overlay = {
+            if (it.playbackState == PlaybackState.Buffering) {
+                Box(modifier = Modifier.align(Alignment.Center)) {
+                    editorScope.loadingIndicator(playbackState)
+                }
+            }
+        },
+        content = {
+            editorScope.background(this, playbackState)
+            if (it.playbackState != PlaybackState.Buffering) {
+                Box(modifier = Modifier.align(Alignment.Center)) {
+                    editorScope.playPauseButton(this@VideoControlsContainer, playbackState)
+                }
+            }
+            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                editorScope.seekbar(this@VideoControlsContainer, playbackState)
+            }
         }
-        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-            seekbar(this@VideoControls, playbackState)
-        }
-    }
-    LaunchedEffect(key1 = controlsVisible) {
-        if (controlsVisible) {
-            delay(5000)
-            controlsVisible = false
-        }
-    }
+    )
 }
 
 private val defaultBackground: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit =
@@ -69,9 +61,25 @@ private val defaultBackground: @Composable AnimatedVisibilityScope.(MutableVideo
 
 private val defaultPlayPauseButton: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit =
     {
-        PlayPauseButtonWithLoading(videoPlaybackState = it)
+        PlayPauseButton(videoPlaybackState = it)
     }
 
 private val defaultSeekBar: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit = {
     AnimatedSeekbar(videoPlaybackState = it)
+}
+
+private val defaultLoadingIndicator: @Composable (MutableVideoPlayerState) -> Unit = {
+    CircularProgressIndicator(color = Color.White)
+}
+
+class VideoControlsEditorScope internal constructor(
+    seekbar: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit,
+    playPauseButton: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit,
+    background: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit,
+    loadingIndicator: @Composable (MutableVideoPlayerState) -> Unit
+) {
+    var seekbar: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit by mutableStateOf(seekbar)
+    var playPauseButton: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit by mutableStateOf(playPauseButton)
+    var background: @Composable AnimatedVisibilityScope.(MutableVideoPlayerState) -> Unit by mutableStateOf(background)
+    var loadingIndicator: @Composable (MutableVideoPlayerState) -> Unit by mutableStateOf(loadingIndicator)
 }

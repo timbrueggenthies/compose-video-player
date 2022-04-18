@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,13 +27,17 @@ fun VideoControlsContainer(
     modifier: Modifier = Modifier,
     enterTransition: EnterTransition = fadeIn(),
     exitTransition: ExitTransition = fadeOut(),
+    overlay: @Composable BoxScope.(MutableVideoPlayerState) -> Unit = { },
     content: @Composable VideoControlsComponentsScope.(MutableVideoPlayerState) -> Unit,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier) {
+        Box(modifier = Modifier.matchParentSize()) {
+            overlay(playbackState)
+        }
         AnimatedVisibility(visible = visible, enter = enterTransition, exit = exitTransition) {
-            val scope = VideoControlsComponentsScopeImpl(this@Box, this)
-            Box(modifier = Modifier.fillMaxSize()) {
-                content(scope, playbackState)
+            val innerScope = VideoControlsComponentsScopeImpl(this@Box, this)
+            Box(modifier = Modifier.matchParentSize()) {
+                content(innerScope, playbackState)
             }
         }
     }
@@ -46,22 +49,21 @@ fun VideoControlsContainer(
     modifier: Modifier = Modifier,
     enterTransition: EnterTransition = fadeIn(),
     exitTransition: ExitTransition = fadeOut(),
+    overlay: @Composable BoxScope.(MutableVideoPlayerState) -> Unit = { },
     content: @Composable VideoControlsComponentsScope.(MutableVideoPlayerState) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     var controlsVisible by remember { mutableStateOf(false) }
-    Box(
+    VideoControlsContainer(
         modifier = modifier
-            .clickable(interactionSource, null) { controlsVisible = !controlsVisible }
-    ) {
-        VideoControlsContainer(
-            playbackState = playbackState,
-            visible = controlsVisible,
-            enterTransition = enterTransition,
-            exitTransition = exitTransition,
-            content = content
-        )
-    }
+            .clickable(interactionSource, null) { controlsVisible = !controlsVisible },
+        playbackState = playbackState,
+        visible = controlsVisible,
+        enterTransition = enterTransition,
+        exitTransition = exitTransition,
+        overlay = overlay,
+        content = content
+    )
     LaunchedEffect(key1 = controlsVisible) {
         if (controlsVisible) {
             delay(5000)
@@ -74,5 +76,5 @@ interface VideoControlsComponentsScope : BoxScope, AnimatedVisibilityScope
 
 class VideoControlsComponentsScopeImpl(
     boxScope: BoxScope,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) : VideoControlsComponentsScope, BoxScope by boxScope, AnimatedVisibilityScope by animatedVisibilityScope

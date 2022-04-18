@@ -1,10 +1,10 @@
 package de.brueggenthies.compose.video.internal
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntSize
 import androidx.media3.common.Player
-import de.brueggenthies.compose.video.internal.durationOrNull
-import de.brueggenthies.compose.video.internal.intSizeOrNull
 import de.brueggenthies.compose.video.state.PlaybackState
 import de.brueggenthies.compose.video.state.RepeatMode
 import de.brueggenthies.compose.video.state.VideoPlayerState
